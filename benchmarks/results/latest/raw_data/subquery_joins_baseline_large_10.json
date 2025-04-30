@@ -1,0 +1,68 @@
+{
+  "category": "subquery_joins",
+  "optimizer": "baseline",
+  "dataset": "large",
+  "concurrency": 10,
+  "iterations": [
+    {
+      "iteration": 1,
+      "queryTime": 712.6020994835727,
+      "optimizationTime": 31.14481521467717,
+      "memoryUsage": 145.65599589754163,
+      "cpuUtilization": 61.890975965452064,
+      "throughput": 38.83325329450754
+    },
+    {
+      "iteration": 2,
+      "queryTime": 787.4583819693726,
+      "optimizationTime": 31.27103489121832,
+      "memoryUsage": 147.57668185773167,
+      "cpuUtilization": 57.65075657070501,
+      "throughput": 39.31339554751438
+    },
+    {
+      "iteration": 3,
+      "queryTime": 749.7275965589165,
+      "optimizationTime": 31.452079945657253,
+      "memoryUsage": 155.8273769697363,
+      "cpuUtilization": 58.40490970971899,
+      "throughput": 41.006390141189996
+    },
+    {
+      "iteration": 4,
+      "queryTime": 764.760440191135,
+      "optimizationTime": 31.256123756836004,
+      "memoryUsage": 149.20856267576718,
+      "cpuUtilization": 62.48777707876331,
+      "throughput": 40.49197913549036
+    },
+    {
+      "iteration": 5,
+      "queryTime": 758.395000523639,
+      "optimizationTime": 31.418665759491144,
+      "memoryUsage": 146.09713258780386,
+      "cpuUtilization": 60.91032127310315,
+      "throughput": 38.17309120414298
+    }
+  ],
+  "stats": {
+    "averageQueryTime": 754.588703745327,
+    "stdDevQueryTime": 22.63766111235981,
+    "averageOptimizationTime": 31.308543913575978,
+    "stdDevOptimizationTime": 0.9392563174072793,
+    "averageMemoryUsage": 148.8731499977161,
+    "stdDevMemoryUsage": 4.466194499931483,
+    "averageCpuUtilization": 60.26894811954851,
+    "stdDevCpuUtilization": 1.8080684435864556,
+    "queriesPerSecond": 39.56362186456905,
+    "stdDevThroughput": 1.1869086559370714
+  },
+  "executionPlan": {
+    "optimizer": "baseline",
+    "planType": "NestedLoopJoin",
+    "estimatedCost": 103.93407736648041,
+    "estimatedRows": 1024.2725410277708,
+    "usesHistogram": false,
+    "subqueryFlattened": false
+  }
+}

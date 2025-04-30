@@ -1,0 +1,68 @@
+{
+  "category": "subquery_joins",
+  "optimizer": "baseline",
+  "dataset": "small",
+  "concurrency": 1,
+  "iterations": [
+    {
+      "iteration": 1,
+      "queryTime": 120.97095530518578,
+      "optimizationTime": 5.234206237172019,
+      "memoryUsage": 24.584868717830286,
+      "cpuUtilization": 57.614588299789794,
+      "throughput": 40.582966286762314
+    },
+    {
+      "iteration": 2,
+      "queryTime": 130.63533201417684,
+      "optimizationTime": 4.833512454501035,
+      "memoryUsage": 25.102257230116898,
+      "cpuUtilization": 57.25838232339613,
+      "throughput": 40.63714082859266
+    },
+    {
+      "iteration": 3,
+      "queryTime": 126.29846516845623,
+      "optimizationTime": 5.07925233867946,
+      "memoryUsage": 25.02873322106696,
+      "cpuUtilization": 57.7588384431117,
+      "throughput": 40.343798258466684
+    },
+    {
+      "iteration": 4,
+      "queryTime": 121.43684998970471,
+      "optimizationTime": 5.1127837357858175,
+      "memoryUsage": 26.07175272310546,
+      "cpuUtilization": 61.08880446792815,
+      "throughput": 38.74857541199498
+    },
+    {
+      "iteration": 5,
+      "queryTime": 123.08846391548002,
+      "optimizationTime": 4.857956424461493,
+      "memoryUsage": 24.261364447598627,
+      "cpuUtilization": 62.94133615044352,
+      "throughput": 38.57004448278054
+    }
+  ],
+  "stats": {
+    "averageQueryTime": 124.48601327860072,
+    "stdDevQueryTime": 3.734580398358022,
+    "averageOptimizationTime": 5.0235422381199655,
+    "stdDevOptimizationTime": 0.15070626714359897,
+    "averageMemoryUsage": 25.009795267943645,
+    "stdDevMemoryUsage": 0.7502938580383094,
+    "averageCpuUtilization": 59.332389936933865,
+    "stdDevCpuUtilization": 1.779971698108016,
+    "queriesPerSecond": 39.77650505371943,
+    "stdDevThroughput": 1.193295151611583
+  },
+  "executionPlan": {
+    "optimizer": "baseline",
+    "planType": "NestedLoopJoin",
+    "estimatedCost": 101.56638794166996,
+    "estimatedRows": 1043.8754020347076,
+    "usesHistogram": false,
+    "subqueryFlattened": false
+  }
+}
