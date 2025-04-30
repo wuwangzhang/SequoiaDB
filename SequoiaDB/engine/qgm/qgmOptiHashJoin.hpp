@@ -69,6 +69,11 @@ namespace engine
       QGM_HINS             _hints ;
       _qgmOptiTreeNode     **_outer ;
       _qgmOptiTreeNode     **_inner ;
+      
+      // Cost parameters for hash join
+      double               _buildCPUCost ;
+      double               _probeCPUCost ;
+      double               _spillIOCost ;
 
    public:
       _qgmOptiHashJoin( INT32 type, _qgmPtrTable *table,

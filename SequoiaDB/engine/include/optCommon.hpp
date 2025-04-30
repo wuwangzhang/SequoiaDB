@@ -72,6 +72,15 @@ namespace engine
    #define OPT_HASH_PROBE_CPU_COST           ( 1 )
    #define OPT_HASH_SPILL_IO_COST            ( 15 )
 
+   // Histogram parameters
+   #define OPT_HISTOGRAM_DEFAULT_BUCKETS     ( 100 )
+   #define OPT_HISTOGRAM_DEFAULT_SAMPLE_SIZE ( 1000 )
+
+   // Join selectivity parameters
+   #define OPT_JOIN_DEFAULT_SELECTIVITY      ( 0.1 )
+   #define OPT_JOIN_MIN_SELECTIVITY          ( 0.0001 )
+   #define OPT_JOIN_MAX_SELECTIVITY          ( 0.9 )
+
    // Base CPU cost to process a operator
    #define OPT_OPTR_BASE_CPU_COST            ( 1 )
 

@@ -54,7 +54,10 @@ namespace engine
                                       _qgmParamTable *param )
    :_qgmOptiTreeNode( QGM_OPTI_TYPE_HASHJOIN, table, param ),
     _joinType( type ),
-    _condition( NULL )
+    _condition( NULL ),
+    _buildCPUCost( 0.0 ),
+    _probeCPUCost( 0.0 ),
+    _spillIOCost( 0.0 )
    {
       _outer = NULL ;
       _inner = NULL ;
@@ -247,6 +250,11 @@ namespace engine
             goto error ;
          }
       }
+      
+      // Set the cost parameters for hash join
+      _buildCPUCost = OPT_HASH_BUILD_CPU_COST ;
+      _probeCPUCost = OPT_HASH_PROBE_CPU_COST ;
+      _spillIOCost = OPT_HASH_SPILL_IO_COST ;
 
    done:
       return rc ;
