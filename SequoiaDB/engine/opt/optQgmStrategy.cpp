@@ -34,6 +34,7 @@
 #include "optQgmStrategy.hpp"
 #include "optQgmCommStrategy.hpp"
 #include "optQgmSpecStrategy.hpp"
+#include "optQgmSubqueryRewriter.hpp"
 
 namespace engine
 {
@@ -217,6 +218,16 @@ namespace engine
       // JOIN CONDITION
       ON_STRATEGY_RANGE( QGM_OPTI_TYPE_JOIN_CONDITION, QGM_OPTI_TYPE_SELECT,
                          QGM_OPTI_TYPE_SPLIT, optQgmRefuseSty ) ;
+                         
+      ON_STRATEGY_RANGE( QGM_OPTI_TYPE_HASHJOIN, QGM_OPTI_TYPE_SELECT,
+                         QGM_OPTI_TYPE_JOIN, optQgmRefuseSty ) ;
+                         
+      // HASHJOIN CONDITION
+      ON_STRATEGY_RANGE( QGM_OPTI_TYPE_HASHJOIN_CONDITION, QGM_OPTI_TYPE_SELECT,
+                         QGM_OPTI_TYPE_SPLIT, optQgmRefuseSty ) ;
+                         
+      ON_STRATEGY( QGM_OPTI_TYPE_SELECT, QGM_OPTI_TYPE_FILTER, optQgmSubqueryFlattenStrategy ) ;
+      ON_STRATEGY( QGM_OPTI_TYPE_SELECT, QGM_OPTI_TYPE_JOIN, optQgmSubqueryFlattenStrategy ) ;
 
       // INSERT
       ON_STRATEGY_RANGE( QGM_OPTI_TYPE_INSERT, QGM_OPTI_TYPE_SELECT,

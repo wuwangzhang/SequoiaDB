@@ -34,6 +34,7 @@
 #include "optQgmOptimizer.hpp"
 #include "qgmOprUnit.hpp"
 #include "qgmOptiNLJoin.hpp"
+#include "optQgmSubqueryRewriter.hpp"
 
 namespace engine
 {
@@ -48,7 +49,19 @@ namespace engine
 
    INT32 _optQgmOptimizer::optimize( qgmOptTree & orgTree )
    {
-      // TODO:XUJIANHUI
+      INT32 rc = SDB_OK ;
+      
+      optQgmSubqueryRewriter *rewriter = getQgmSubqueryRewriter() ;
+      if ( rewriter )
+      {
+         rc = rewriter->rewrite( orgTree ) ;
+         if ( SDB_OK != rc )
+         {
+            PD_LOG( PDERROR, "Failed to rewrite subqueries, rc: %d", rc ) ;
+            return rc ;
+         }
+      }
+      
       return SDB_OK ;
    }
 
