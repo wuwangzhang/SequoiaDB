@@ -40,6 +40,7 @@
 #include "pd.hpp"
 #include "qgmOptiSelect.hpp"
 #include "qgmOptiNLJoin.hpp"
+#include "qgmOptiHashJoin.hpp"
 #include "qgmConditionNode.hpp"
 #include "qgmOptiInsert.hpp"
 #include "qgmPtrTable.hpp"
@@ -412,36 +413,70 @@ namespace engine
          break ;
       }
       case QGM_OPTI_TYPE_JOIN :
+      case QGM_OPTI_TYPE_HASHJOIN :
       {
          SDB_ASSERT( NULL != physicalTree, "impossible" ) ;
          SDB_ASSERT( 2 == logicalTree->getSubNodeCount(),
                      "impossible" ) ;
 
          _qgmPlan *phy = NULL ;
-         _qgmOptiNLJoin *join = (_qgmOptiNLJoin *)logicalTree ;
-         rc = _crtPhyJoin( join, physicalTree, phy ) ;
-         if ( SDB_OK != rc )
+         
+         if (logicalTree->getType() == QGM_OPTI_TYPE_JOIN)
          {
-            goto error ;
-         }
-         else
-         {
-            rc = _buildPhysicalNode( join->outer(), phy ) ;
+            _qgmOptiNLJoin *join = (_qgmOptiNLJoin *)logicalTree ;
+            rc = _crtPhyJoin( join, physicalTree, phy ) ;
             if ( SDB_OK != rc )
             {
                goto error ;
             }
+            else
+            {
+               rc = _buildPhysicalNode( join->outer(), phy ) ;
+               if ( SDB_OK != rc )
+               {
+                  goto error ;
+               }
 
-            rc = _buildPhysicalNode( join->inner(), phy ) ;
+               rc = _buildPhysicalNode( join->inner(), phy ) ;
+               if ( SDB_OK != rc )
+               {
+                  goto error ;
+               }
+            }
+
+            if ( !join->_hints.empty() )
+            {
+               rc = (( _qgmPlHashJoin *)phy)->init( join ) ;
+               if ( SDB_OK != rc )
+               {
+                  goto error ;
+               }
+            }
+         }
+         else // QGM_OPTI_TYPE_HASHJOIN
+         {
+            _qgmOptiHashJoin *join = (_qgmOptiHashJoin *)logicalTree ;
+            rc = _crtPhyJoin( (_qgmOptiNLJoin*)join, physicalTree, phy ) ;
             if ( SDB_OK != rc )
             {
                goto error ;
             }
-         }
+            else
+            {
+               rc = _buildPhysicalNode( join->outer(), phy ) ;
+               if ( SDB_OK != rc )
+               {
+                  goto error ;
+               }
 
-         if ( !join->_hints.empty() )
-         {
-            rc = (( _qgmPlHashJoin *)phy)->init( join ) ;
+               rc = _buildPhysicalNode( join->inner(), phy ) ;
+               if ( SDB_OK != rc )
+               {
+                  goto error ;
+               }
+            }
+            
+            rc = (( _qgmPlHashJoin *)phy)->init( (_qgmOptiNLJoin*)join ) ;
             if ( SDB_OK != rc )
             {
                goto error ;
@@ -1995,8 +2030,28 @@ namespace engine
 
          {
             SQL_CON_ITR itr = root->children.begin() ;
-            _qgmOptiNLJoin *join = NULL ;
-            join = SDB_OSS_NEW _qgmOptiNLJoin( type, _table, _param ) ;
+            _qgmOptiTreeNode *join = NULL ;
+            
+            BOOLEAN useHashJoin = FALSE;
+            for (QGM_HINS::const_iterator it = node->_hints.begin(); 
+                 it != node->_hints.end(); ++it)
+            {
+               if ((*it).value == "HASHJOIN")
+               {
+                  useHashJoin = TRUE;
+                  break;
+               }
+            }
+            
+            if (useHashJoin)
+            {
+               join = SDB_OSS_NEW _qgmOptiHashJoin( type, _table, _param );
+            }
+            else
+            {
+               join = SDB_OSS_NEW _qgmOptiNLJoin( type, _table, _param );
+            }
+            
             if ( NULL == join )
             {
                PD_LOG( PDERROR, "failed to allocate mem") ;

@@ -67,6 +67,11 @@ namespace engine
    // CPU cost to extract a index item from index page
    #define OPT_IDX_CPU_COST                  ( 2 )
 
+   // Hash join cost parameters
+   #define OPT_HASH_BUILD_CPU_COST           ( 3 )
+   #define OPT_HASH_PROBE_CPU_COST           ( 1 )
+   #define OPT_HASH_SPILL_IO_COST            ( 15 )
+
    // Base CPU cost to process a operator
    #define OPT_OPTR_BASE_CPU_COST            ( 1 )
 

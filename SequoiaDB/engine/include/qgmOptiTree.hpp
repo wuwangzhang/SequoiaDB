@@ -70,6 +70,8 @@ namespace engine
       QGM_OPTI_TYPE_MTHMCHSCAN,
       QGM_OPTI_TYPE_MTHMCHFILTER,
       QGM_OPTI_TYPE_SPLIT,
+      QGM_OPTI_TYPE_HASHJOIN,
+      QGM_OPTI_TYPE_HASHJOIN_CONDITION,
 
       // must be the last
       QGM_OPTI_NODE_MAX
