@@ -1884,6 +1884,12 @@ namespace engine
             ( scanner.isHitEnd() ) )
          {
             _hitEnd = TRUE ;
+            
+            if ( isTailMode() && numRecords() == startNumRecords )
+            {
+               _recordID = scanner.getCurRID();
+            }
+            
             break ;
          }
          else
@@ -2086,6 +2092,12 @@ namespace engine
          if ( 0 == _numToReturn )
          {
             _hitEnd = TRUE ;
+            
+            if ( isTailMode() && numRecords() == startNumRecords )
+            {
+               _recordID = secScanner.getCurRID();
+            }
+            
             break ;
          }
 
@@ -2100,12 +2112,24 @@ namespace engine
                if ( _indexBlocks.size() < 2 )
                {
                   _hitEnd = TRUE ;
+                  
+                  if ( isTailMode() && numRecords() == startNumRecords )
+                  {
+                     _recordID = secScanner.getCurRID();
+                  }
+                  
                   break ;
                }
             }
             else
             {
                _hitEnd = TRUE ;
+               
+               if ( isTailMode() && numRecords() == startNumRecords )
+               {
+                  _recordID = secScanner.getCurRID();
+               }
+               
                break ;
             }
          }

@@ -549,6 +549,10 @@ namespace engine
       _needTimeout         = TRUE ;
       _needCloseOnEOF      = FALSE ;
 
+      _tailMode            = FALSE ;
+      _tailWaitTime        = 1000 * 1000 ; // Default 1 second in microseconds
+      _lastTailCheck       = 0 ;
+
       _buffer.setContextValidator( this ) ;
    }
 
@@ -991,11 +995,47 @@ namespace engine
       }
       else if ( eof() && isEmpty() )
       {
-         _monCtxCB.monReturnInc( 1, 0 ) ;
-
-         rc = SDB_DMS_EOC ;
-         _isOpened = FALSE ;
-         goto error ;
+         if ( _tailMode )
+         {
+            UINT64 currentTime = ossGetCurrentMicroseconds();
+            
+            if ( _lastTailCheck == 0 || 
+                currentTime - _lastTailCheck >= _tailWaitTime )
+            {
+               _hitEnd = FALSE;
+               _lastTailCheck = currentTime;
+               
+               rc = _prepareDataMonitor( cb );
+               
+               if ( rc && SDB_DMS_EOC != rc )
+               {
+                  PD_LOG( PDERROR, "Failed to prepare data in tail mode, rc: %d", rc );
+                  goto error;
+               }
+               
+               if ( !isEmpty() )
+               {
+                  goto process_data;
+               }
+               
+               _monCtxCB.monReturnInc( 1, 0 );
+               rc = SDB_RTN_CONTEXT_EMPTY;
+               goto done;
+            }
+            else
+            {
+               _monCtxCB.monReturnInc( 1, 0 );
+               rc = SDB_RTN_CONTEXT_EMPTY;
+               goto done;
+            }
+         }
+         else
+         {
+            _monCtxCB.monReturnInc( 1, 0 );
+            rc = SDB_DMS_EOC;
+            _isOpened = FALSE;
+            goto error;
+         }
       }
 
       // need to get data lock
@@ -1085,6 +1125,7 @@ namespace engine
                                      startIndexWrite ) ;
       }
 
+process_data:
       // if not empty, get current data
       if ( !isEmpty() )
       {

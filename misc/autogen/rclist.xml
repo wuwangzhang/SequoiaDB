@@ -3235,10 +3235,10 @@
       </code>
 
       <code>
-         <name>SDB_ERROR_RESERVED_404</name> <!--Not used-->
+         <name>SDB_RTN_CONTEXT_EMPTY</name>
          <description>
-            <en>Reserved</en> <!--Not used-->
-            <cn>保留</cn> <!--Not used-->
+            <en>Context is empty but waiting for new data</en>
+            <cn>上下文为空但正在等待新数据</cn>
          </description>
       </code>
 

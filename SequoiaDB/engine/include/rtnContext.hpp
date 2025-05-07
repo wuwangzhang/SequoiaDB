@@ -402,6 +402,15 @@ namespace engine
          {
             _canPrepareMore = canPrepare ;
          }
+         
+         void     enableTailMode(UINT64 waitTimeMillis = 1000)
+         {
+            _tailMode = TRUE;
+            _tailWaitTime = waitTimeMillis * 1000; // Convert to microseconds
+            _lastTailCheck = 0;
+         }
+
+         BOOLEAN  isTailMode() const { return _tailMode; }
 
       public:
          virtual const CHAR*      name() const = 0 ;
@@ -650,6 +659,11 @@ namespace engine
          BOOLEAN                 _needTimeout ;
          // indicates whether to close when EOF
          BOOLEAN                 _needCloseOnEOF ;
+
+         // Tail mode fields
+         BOOLEAN                 _tailMode ;       // Whether the context is in tail mode
+         UINT64                  _tailWaitTime ;   // How long to wait for new data in microseconds
+         UINT64                  _lastTailCheck ;  // Last time we checked for new data
 
          MsgGlobalID             _globalID ;
    } ;
