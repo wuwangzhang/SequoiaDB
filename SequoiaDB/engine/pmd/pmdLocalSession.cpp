@@ -58,7 +58,8 @@ namespace engine
    _pmdLocalSession::_pmdLocalSession( SOCKET fd )
    : pmdSession( fd ),
      _inMsgConvertor( NULL ),
-     _outMsgConvertor( NULL )
+     _outMsgConvertor( NULL ),
+     _maskingEnabled( FALSE )
    {
       ossMemset( (void*)&_replyHeader, 0, sizeof(_replyHeader) ) ;
       _needReply = TRUE ;
@@ -842,6 +843,28 @@ namespace engine
 
       PD_TRACE_ENTRY( SDB_PMDLOCALSN_PROMSG ) ;
 
+      _maskingEnabled = FALSE ;
+      _maskingCollection.clear() ;
+      _maskingUser.clear() ;
+      
+      if ( MSG_BS_QUERY_REQ == msg->opCode )
+      {
+         MsgOpQuery *pQueryMsg = (MsgOpQuery*)msg ;
+         if ( pQueryMsg->nameLength > 0 )
+         {
+            _maskingCollection.assign( pQueryMsg->name, pQueryMsg->nameLength ) ;
+            _maskingUser = eduCB()->getUserName() ;
+            
+            _pmdMaskingMgr *pMaskingMgr = pmdGetKRCB()->getMaskingMgr() ;
+            if ( pMaskingMgr && pMaskingMgr->isInitialized() && 
+                 pMaskingMgr->needMasking( _maskingCollection.c_str(), 
+                                          _maskingUser.c_str() ) )
+            {
+               _maskingEnabled = TRUE ;
+            }
+         }
+      }
+
       UINT64 bTime = ossGetCurrentMicroseconds() ;
 
       // prepare
@@ -1173,33 +1196,21 @@ namespace engine
          goto done ;
       }
       
-      if ( !IS_REPLY_TYPE(responseMsg->header.opCode) )
+      if ( !IS_REPLY_TYPE(responseMsg->header.opCode) || 
+           MAKE_REPLY_TYPE(MSG_BS_QUERY_REQ) != responseMsg->header.opCode )
+      {
+         goto done ;
+      }
+      
+      if ( !_maskingEnabled || _maskingCollection.empty() )
       {
          goto done ;
       }
       
       try
       {
-         const CHAR *pCollectionName = NULL ;
-         if ( responseMsg->contextID != -1 )
-         {
-            rtnContext *pContext = pmdGetKRCB()->getRTNCB()->contextFind( responseMsg->contextID ) ;
-            if ( pContext )
-            {
-               pCollectionName = pContext->getCollection() ;
-            }
-         }
-         
-         if ( !pCollectionName || '\0' == *pCollectionName )
-         {
-            goto done ;
-         }
-         
-         const CHAR *pUserName = eduCB()->getUserName() ;
-         if ( !pUserName || '\0' == *pUserName )
-         {
-            goto done ;
-         }
+         const CHAR *pCollectionName = _maskingCollection.c_str() ;
+         const CHAR *pUserName = _maskingUser.c_str() ;
          
          if ( !pMaskingMgr->needMasking( pCollectionName, pUserName ) )
          {

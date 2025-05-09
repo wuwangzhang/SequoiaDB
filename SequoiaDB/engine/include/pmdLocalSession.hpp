@@ -126,6 +126,11 @@ namespace engine
          IMsgConvertor        *_outMsgConvertor ;  // For reply to client.
 
          boost::shared_ptr<const authAccessControlList> _acl;
+         
+         // Masking related
+         BOOLEAN              _maskingEnabled ;
+         std::string          _maskingCollection ;
+         std::string          _maskingUser ;
    } ;
    typedef _pmdLocalSession pmdLocalSession ;
 
