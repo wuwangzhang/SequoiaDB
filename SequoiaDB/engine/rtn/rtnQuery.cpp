@@ -489,6 +489,11 @@ namespace engine
          PD_LOG( PDERROR, "failed to open sort context:%d", rc ) ;
          goto error ;
       }
+      
+      if ( pContext->isMaskingEnabled() )
+      {
+         context->enableMasking( pContext->getMaskingUser() ) ;
+      }
 
       contextID = sortContextID ;
       if ( ppContext )
