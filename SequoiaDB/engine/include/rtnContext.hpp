@@ -377,6 +377,26 @@ namespace engine
 
          BOOLEAN        isAffectGIndex() const { return _isAffectGIndex ; }
 
+         // Masking related methods
+         void enableMasking(const CHAR* user)
+         {
+            _maskingEnabled = TRUE ;
+            if (user)
+            {
+               _maskingUser = user ;
+            }
+         }
+
+         BOOLEAN isMaskingEnabled() const
+         {
+            return _maskingEnabled ;
+         }
+
+         const CHAR* getMaskingUser() const
+         {
+            return _maskingUser.c_str() ;
+         }
+
          const MsgGlobalID& getGlobalID() const { return _globalID ; }
 
       private:

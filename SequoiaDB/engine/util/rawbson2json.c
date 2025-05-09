@@ -37,29 +37,91 @@
 *******************************************************************************/
 #include "rawbson2json.h"
 #include "../client/jstobs.h"
+#include "utilDecodeRawbson.hpp"
+#include "pd.hpp"
 
 // The caller pass the pointer for raw bson, and output buffer pointer and
 // buffer length.
 // the function returns true if bufferLen is good enough to hold data, otherwise
 // it will return FALSE and the content in outputbuffer is not defined
-BOOLEAN rawbson2json ( const CHAR *bsonObj,
+BOOLEAN rawbson2json_ex ( const CHAR *bsonObj,
                       CHAR *pOutputBuffer,
-                      INT32 bufferLen )
+                      INT32 bufferLen,
+                      const CHAR *collection,
+                      const CHAR *user )
 {
    bson obj ;
    bson_init ( &obj ) ;
    bson_init_finished_data ( &obj, (char*)bsonObj ) ;
-   return bsonToJson ( pOutputBuffer, bufferLen, &obj,
-                       FALSE, FALSE ) ;
+   
+   if (collection && user)
+   {
+      CHAR *pBuffer = NULL ;
+      INT32 bufSize = 0 ;
+      BOOLEAN result = FALSE ;
+      
+      INT32 rc = SDB_OK ;
+      rc = bsonCovertJson((CHAR*)bsonObj, &pBuffer, &bufSize, collection, user) ;
+      if (SDB_OK == rc && pBuffer)
+      {
+         if (bufferLen > bufSize)
+         {
+            ossMemcpy(pOutputBuffer, pBuffer, bufSize) ;
+            result = TRUE ;
+         }
+         
+         SDB_OSS_FREE(pBuffer) ;
+         return result ;
+      }
+   }
+   
+   return bsonToJson(pOutputBuffer, bufferLen, &obj, FALSE, FALSE) ;
+}
+
+BOOLEAN rawbson2json ( const CHAR *bsonObj,
+                      CHAR *pOutputBuffer,
+                      INT32 bufferLen )
+{
+   return rawbson2json_ex(bsonObj, pOutputBuffer, bufferLen, NULL, NULL);
+}
+
+BOOLEAN rawbson2csv_ex ( const CHAR *bsonObj,
+                      CHAR *pOutputBuffer,
+                      INT32 bufferLen,
+                      const CHAR *collection,
+                      const CHAR *user )
+{
+   bson obj ;
+   bson_init ( &obj ) ;
+   bson_init_finished_data ( &obj, (char*)bsonObj ) ;
+   
+   if (collection && user)
+   {
+      CHAR *pBuffer = NULL ;
+      INT32 bufSize = 0 ;
+      BOOLEAN result = FALSE ;
+      
+      INT32 rc = SDB_OK ;
+      rc = bsonCovertJson((CHAR*)bsonObj, &pBuffer, &bufSize, collection, user) ;
+      if (SDB_OK == rc && pBuffer)
+      {
+         if (bufferLen > bufSize)
+         {
+            ossMemcpy(pOutputBuffer, pBuffer, bufSize) ;
+            result = TRUE ;
+         }
+         
+         SDB_OSS_FREE(pBuffer) ;
+         return result ;
+      }
+   }
+   
+   return bsonToJson(pOutputBuffer, bufferLen, &obj, TRUE, FALSE) ;
 }
 
 BOOLEAN rawbson2csv ( const CHAR *bsonObj,
                       CHAR *pOutputBuffer,
                       INT32 bufferLen )
 {
-   bson obj ;
-   bson_init ( &obj ) ;
-   bson_init_finished_data ( &obj, (char*)bsonObj ) ;
-   return bsonToJson ( pOutputBuffer, bufferLen, &obj,
-                       TRUE, FALSE ) ;
+   return rawbson2csv_ex(bsonObj, pOutputBuffer, bufferLen, NULL, NULL);
 }

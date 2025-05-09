@@ -381,6 +381,7 @@ namespace engine
    #define PMD_OPTION_WWW_PATH_DIR     "web"
    #define PMD_OPTION_TMPBLK_PATH      "tmp"
    #define PMD_OPTION_ARCHIVE_LOG_PATH "archivelog"
+   #define PMD_OPTION_MASKINGCONFIG    "maskingconfig"
    #define PMD_CURRENT_PATH            "./"
 
    #define ENGINE_NPIPE_PREFIX         "sequoiadb_engine_"

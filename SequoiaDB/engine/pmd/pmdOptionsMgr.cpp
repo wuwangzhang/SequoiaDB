@@ -1922,6 +1922,7 @@ done:
       ossMemset( _dmsTmpBlkPath, 0, OSS_MAX_PATHSIZE + 1 ) ;
       ossMemset( _krcbLobPath, 0, OSS_MAX_PATHSIZE + 1 ) ;
       ossMemset( _krcbLobMetaPath, 0, OSS_MAX_PATHSIZE + 1 ) ;
+      ossMemset( _krcbMaskingConfigPath, 0, OSS_MAX_PATHSIZE + 1 ) ;
       ossMemset( _auditMaskStr, 0, sizeof( _auditMaskStr ) ) ;
       ossMemset( _ftMaskStr, 0, sizeof( _ftMaskStr ) ) ;
       ossMemset( _memDebugMaskStr, 0, sizeof( _memDebugMaskStr ) ) ;
@@ -2128,6 +2129,9 @@ done:
       // --lobmetapath
       rdxPath( pEX, PMD_OPTION_LOBMETAPATH, _krcbLobMetaPath, sizeof(_krcbLobMetaPath),
                FALSE, PMD_CFG_CHANGE_FORBIDDEN, "" ) ;
+      
+      rdxPath( pEX, PMD_OPTION_MASKINGCONFIG, _krcbMaskingConfigPath, 
+               sizeof(_krcbMaskingConfigPath), FALSE, PMD_CFG_CHANGE_FORBIDDEN, "" ) ;
 
       // --maxpool
       rdxUInt( pEX, PMD_OPTION_MAXPOOL, _krcbMaxPool, FALSE, PMD_CFG_CHANGE_RUN,

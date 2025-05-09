@@ -85,7 +85,9 @@ public:
                         CHAR **ppBuffer, INT32 *pCSVSize ) ;
 
    INT32 bsonCovertJson( CHAR *pbson,
-                         CHAR **ppBuffer, INT32 *pJSONSize ) ;
+                         CHAR **ppBuffer, INT32 *pJSONSize,
+                         const CHAR *collection = NULL,
+                         const CHAR *user = NULL ) ;
 
 private:
    CHAR *_trimLeft( CHAR *pCursor, INT32 &size ) ;

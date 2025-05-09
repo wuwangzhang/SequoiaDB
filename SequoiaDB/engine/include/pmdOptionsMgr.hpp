@@ -510,6 +510,10 @@ namespace engine
          {
             return _krcbLobMetaPath ;
          }
+         OSS_INLINE const CHAR *getMaskingConfigPath() const
+         {
+            return _krcbMaskingConfigPath ;
+         }
          OSS_INLINE const CHAR *getDiagLogPath() const
          {
             return _krcbDiagLogPath;

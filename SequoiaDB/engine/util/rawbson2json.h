@@ -40,11 +40,24 @@
 
 #include "core.h"
 SDB_EXTERN_C_START
+/* Original functions for backward compatibility */
 BOOLEAN rawbson2json ( const CHAR *bsonObj,
                       CHAR *pOutputBuffer,
                       INT32 bufferLen ) ;
 BOOLEAN rawbson2csv ( const CHAR *bsonObj,
                       CHAR *pOutputBuffer,
                       INT32 bufferLen ) ;
+                      
+/* Extended functions with masking support */
+BOOLEAN rawbson2json_ex ( const CHAR *bsonObj,
+                      CHAR *pOutputBuffer,
+                      INT32 bufferLen,
+                      const CHAR *collection,
+                      const CHAR *user ) ;
+BOOLEAN rawbson2csv_ex ( const CHAR *bsonObj,
+                      CHAR *pOutputBuffer,
+                      INT32 bufferLen,
+                      const CHAR *collection,
+                      const CHAR *user ) ;
 SDB_EXTERN_C_END
 #endif

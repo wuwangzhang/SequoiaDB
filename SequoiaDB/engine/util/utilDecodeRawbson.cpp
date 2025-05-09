@@ -463,7 +463,7 @@ INT32 utilDecodeBson::_parseJSONSize( CHAR *pbson, INT32 *pJSONSize )
       PD_LOG ( PDERROR, "Failed to get json size, rc = %d", rc ) ;
       goto error ;
    }
-   //ÒòÎªbson_sprint_lengthÆÀ¹ÀµÄ³¤¶È¸úÊµ¼ÊÐèÒªÓÐ²î¾à£¬ËùÒÔ¼Ó´ó¹ÀËã³¤¶È
+   //ï¿½ï¿½Îªbson_sprint_lengthï¿½ï¿½ï¿½ï¿½ï¿½Ä³ï¿½ï¿½È¸ï¿½Êµï¿½ï¿½ï¿½ï¿½Òªï¿½Ð²ï¿½à£¬ï¿½ï¿½ï¿½Ô¼Ó´ï¿½ï¿½ï¿½ã³¤ï¿½ï¿½
    *pJSONSize = (*pJSONSize) * 2 ;
 done:
    return rc ;
@@ -633,7 +633,9 @@ error:
 }
 
 INT32 utilDecodeBson::bsonCovertJson( CHAR *pbson,
-                                      CHAR **ppBuffer, INT32 *pJSONSize )
+                                      CHAR **ppBuffer, INT32 *pJSONSize,
+                                      const CHAR *collection,
+                                      const CHAR *user )
 {
    INT32 rc = SDB_OK ;
    INT32 fieldsNum = 0 ;
@@ -697,6 +699,57 @@ INT32 utilDecodeBson::bsonCovertJson( CHAR *pbson,
    }
 
    ossMemset( pBuff, 0, tmpSize ) ;
+
+   if (collection && user && pmdGetKRCB()->getMaskingMgr())
+   {
+      bson_iterator it ;
+      bson tempObj ;
+      bson_init(&tempObj) ;
+      
+      bson_iterator_init(&it, &obj) ;
+      while (bson_iterator_next(&it))
+      {
+         const CHAR* fieldName = bson_iterator_key(&it) ;
+         INT32 maskType = PMD_MASKING_TYPE_NONE ;
+         
+         pmdGetKRCB()->getMaskingMgr()->getMaskingRule(
+            collection, fieldName, user, maskType) ;
+         
+         if (maskType == PMD_MASKING_TYPE_REMOVE)
+         {
+            continue ;
+         }
+         else if (maskType == PMD_MASKING_TYPE_NONE)
+         {
+            bson_append_element(&tempObj, fieldName, &it) ;
+         }
+         else
+         {
+            std::string maskedValue ;
+            const CHAR* originalValue = "" ;
+            
+            if (BSON_STRING == bson_iterator_type(&it))
+            {
+               originalValue = bson_iterator_string(&it) ;
+            }
+            else
+            {
+               originalValue = "" ;
+            }
+            
+            pmdGetKRCB()->getMaskingMgr()->applyMasking(
+               maskType, originalValue, maskedValue) ;
+            
+            bson_append_string(&tempObj, fieldName, maskedValue.c_str()) ;
+         }
+      }
+      
+      bson_finish(&tempObj) ;
+      
+      bson_destroy(&obj) ;
+      bson_copy(&obj, &tempObj) ;
+      bson_destroy(&tempObj) ;
+   }
 
    if ( !bsonToJson2 ( pBuff, tmpSize, &obj, _isStrict ) )
    {
