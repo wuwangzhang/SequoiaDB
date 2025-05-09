@@ -127,6 +127,9 @@ namespace engine
       _suLogicalID      = DMS_INVALID_LOGICCSID ;
       _mbContext        = NULL ;
       _scanType         = UNKNOWNSCAN ;
+      _lastLSN.offset   = DPS_INVALID_LSN_OFFSET ;
+      _lastLSN.version  = DPS_INVALID_LSN_VERSION ;
+      _tailLogInited    = FALSE ;
       _numToReturn      = -1 ;
       _numToSkip        = 0 ;
 
@@ -1599,6 +1602,136 @@ namespace engine
       goto done ;
    }
 
+   // PD_TRACE_DECLARE_FUNCTION ( SDB__RTNCONTEXTDATA__CHECKREPLOGS, "_rtnContextData::_checkReplLogs" )
+   INT32 _rtnContextData::_checkReplLogs( pmdEDUCB *cb )
+   {
+      INT32 rc = SDB_OK ;
+      PD_TRACE_ENTRY( SDB__RTNCONTEXTDATA__CHECKREPLOGS ) ;
+      
+      dpsLogRecordHeader header ;
+      dpsLogRecord record ;
+      DPS_LSN expectLSN = _lastLSN ;
+      DPS_LSN_OFFSET endLSN = DPS_INVALID_LSN_OFFSET ;
+      DPS_LSN curLSN ;
+      
+      SDB_DPSCB *dpsCB = sdbGetDPSCB() ;
+      if ( !dpsCB )
+      {
+         PD_LOG( PDWARNING, "DPS is not active, cannot monitor replication logs" ) ;
+         rc = SDB_DMS_EOC ;
+         goto error ;
+      }
+      
+      dpsCB->getCurrentLsn( curLSN ) ;
+      
+      if ( curLSN.offset <= _lastLSN.offset )
+      {
+         rc = SDB_DMS_EOC ;
+         goto error ;
+      }
+      
+      rc = dpsCB->search( _lastLSN, &header, &record ) ;
+      if ( rc )
+      {
+         PD_LOG( PDWARNING, "Failed to search replication logs, rc: %d", rc ) ;
+         goto error ;
+      }
+      
+      endLSN = curLSN.offset ;
+      while ( expectLSN.offset < endLSN )
+      {
+         if ( header._csID != _suLogicalID || 
+              header._clID != _mbContext->mbID() )
+         {
+            goto next_record ;
+         }
+         
+         if ( LOG_TYPE_DATA_INSERT == header._type )
+         {
+            rc = _processLogRecord( record, cb ) ;
+            if ( rc )
+            {
+               PD_LOG( PDWARNING, "Failed to process log record, rc: %d", rc ) ;
+               goto error ;
+            }
+         }
+         
+      next_record:
+         // Move to next record
+         expectLSN.offset += header._length ;
+         expectLSN.version = header._version ;
+         
+         if ( expectLSN.offset >= endLSN )
+         {
+            break ;
+         }
+         
+         // Search for next record
+         rc = dpsCB->searchNext( expectLSN, &header, &record ) ;
+         if ( rc )
+         {
+            if ( SDB_DPS_LSN_OUTOFRANGE == rc )
+            {
+               rc = SDB_OK ;
+               break ;
+            }
+            PD_LOG( PDWARNING, "Failed to search next replication log, rc: %d", rc ) ;
+            goto error ;
+         }
+      }
+      
+      _lastLSN = curLSN ;
+      
+   done:
+      PD_TRACE_EXITRC( SDB__RTNCONTEXTDATA__CHECKREPLOGS, rc ) ;
+      return rc ;
+   error:
+      goto done ;
+   }
+   
+   // PD_TRACE_DECLARE_FUNCTION ( SDB__RTNCONTEXTDATA__PROCESSLOGRECORD, "_rtnContextData::_processLogRecord" )
+   INT32 _rtnContextData::_processLogRecord( dpsLogRecord &record, pmdEDUCB *cb )
+   {
+      INT32 rc = SDB_OK ;
+      PD_TRACE_ENTRY( SDB__RTNCONTEXTDATA__PROCESSLOGRECORD ) ;
+      
+      try
+      {
+         BSONObj obj ;
+         dpsLogRecord::iterator itr = record.find( DPS_LOG_INSERT_OBJ ) ;
+         if ( itr.valid() )
+         {
+            // Get the inserted object
+            obj = BSONObj( itr.value() ) ;
+            
+            if ( _rsFilter && !_rsFilter->match( obj ) )
+            {
+               goto done ;
+            }
+            
+            rc = append( obj ) ;
+            if ( rc )
+            {
+               PD_LOG( PDWARNING, "Failed to append record to context, rc: %d", rc ) ;
+               goto error ;
+            }
+         }
+      }
+      catch( std::exception &e )
+      {
+         PD_LOG( PDWARNING, "Exception occurred while processing log record: %s",
+                e.what() ) ;
+         rc = SDB_SYS ;
+         goto error ;
+      }
+      
+   done:
+      PD_TRACE_EXITRC( SDB__RTNCONTEXTDATA__PROCESSLOGRECORD, rc ) ;
+      return rc ;
+   error:
+      goto done ;
+   }
+   
    INT32 _rtnContextData::_prepareData( pmdEDUCB *cb )
    {
       vector<INT64>* dollarList = NULL ;
@@ -1608,6 +1741,30 @@ namespace engine
       if ( NULL != cb && NULL != _mbContext )
       {
          cb->registerMonCRUDCB( &( _mbContext->mbStat()->_crudCB ) ) ;
+      }
+
+      if ( isTailMode() && _hitEnd && TBSCAN == _scanType )
+      {
+         if ( !_tailLogInited )
+         {
+            sdbGetDPSCB()->getCurrentLsn( _lastLSN ) ;
+            _tailLogInited = TRUE ;
+         }
+         
+         rc = _checkReplLogs( cb ) ;
+         if ( rc && SDB_DMS_EOC != rc )
+         {
+            PD_LOG( PDERROR, "Failed to check replication logs in tail mode, rc: %d", rc ) ;
+            goto error ;
+         }
+         
+         if ( !isEmpty() )
+         {
+            rc = SDB_OK ;
+            goto done ;
+         }
+         
+         rc = SDB_OK ;
       }
 
       if ( _queryModifier )

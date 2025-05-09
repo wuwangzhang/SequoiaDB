@@ -169,6 +169,19 @@ public class DBCursor implements Closeable {
 
         int flag = response.getFlag();
         if (flag != 0) {
+            // SDB_RTN_CONTEXT_EMPTY is returned when in tail mode and no new data is available yet
+            // The error code value should match the one defined in rclist.xml
+            if (flag == -239) { // SDB_RTN_CONTEXT_EMPTY
+                // In tail mode, the context is empty but waiting for new data
+                // Wait a bit and try again
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    throw new BaseException(SDBError.SDB_INTERRUPT, e);
+                }
+                return getResultSetFromServer();
+            }
+            
             contextId = -1;
             if (flag == SDBError.SDB_DMS_EOC.getErrorCode()) {
                 isEOC = true;

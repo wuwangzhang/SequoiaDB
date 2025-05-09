@@ -712,6 +712,19 @@ namespace engine
       {
          dataContext->setPrepareMoreData( TRUE ) ;
       }
+      
+      if ( options.testFlag( FLG_QUERY_TAIL ) )
+      {
+         if ( TBSCAN == scanType || !indexName )
+         {
+            dataContext->enableTailMode() ;
+         }
+         else
+         {
+            PD_LOG( PDWARNING, "Tail mode is only supported for TBSCAN, "
+                   "ignoring FLG_QUERY_TAIL flag" ) ;
+         }
+      }
 
       // Adjust hint for meta-query
       if ( Object == eMeta.type() )

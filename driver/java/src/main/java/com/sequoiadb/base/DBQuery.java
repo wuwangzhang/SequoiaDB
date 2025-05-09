@@ -95,6 +95,12 @@ public class DBQuery {
     /** Close context when EOF
       */
     public static final int FLG_QUERY_CLOSE_EOF_CTX = 0x00080000;
+    
+    /** If we are at end of the data, wait for new data rather than close the context.
+     * This flag enables "tail" mode similar to Unix "tail -f" command.
+     * Only supported for table scans (TBSCAN), not for index scans (IXSCAN).
+     */
+    public static final int FLG_QUERY_TAIL = 0x00200000;
 
     // [ [ oldFlag, newFlag ], ... ]
     private final static int[][] flagsMap = new int[0][2];
@@ -246,6 +252,7 @@ public class DBQuery {
      *              <li>{@link DBQuery#FLG_QUERY_WITH_RETURNDATA}
      *              <li>{@link DBQuery#FLG_QUERY_FOR_UPDATE}
      *              <li>{@link DBQuery#FLG_QUERY_FOR_SHARE}
+     *              <li>{@link DBQuery#FLG_QUERY_TAIL}
      *              </ul>
      */
     public void setFlag(int flag) {

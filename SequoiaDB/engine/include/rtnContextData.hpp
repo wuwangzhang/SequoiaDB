@@ -45,6 +45,8 @@
 #include "rtnResultSetFilter.hpp"
 #include "optAccessPlanRuntime.hpp"
 #include "rtnScanner.hpp"
+#include "dpsLogRecordDef.hpp"
+#include "dpsReplicaLogMgr.hpp"
 
 namespace engine
 {
@@ -335,6 +337,13 @@ namespace engine
          }
 
       protected:
+         // Check for new data in replication logs when in tail mode
+         INT32 _checkReplLogs( _pmdEDUCB *cb ) ;
+         
+         // Process a log record and add to context if it matches query
+         INT32 _processLogRecord( dpsLogRecord &record, _pmdEDUCB *cb ) ;
+         
+      protected:
          _SDB_DMSCB                 *_dmsCB ;
          _dmsStorageUnit            *_su ;
          UINT32                     _suLogicalID ;
@@ -342,6 +351,10 @@ namespace engine
          optAccessPlanRuntime       _planRuntime ;
          optScanType                _scanType ;
 
+         // Tail mode fields for replication log monitoring
+         DPS_LSN                    _lastLSN ;       // Last processed LSN
+         BOOLEAN                    _tailLogInited ; // Whether tail log monitoring is initialized
+         
          // rest number of records to expect, -1 means select all
          SINT64                     _numToReturn ;
          // rest number of records need to skip
