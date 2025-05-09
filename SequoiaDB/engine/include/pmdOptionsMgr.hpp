@@ -510,6 +510,10 @@ namespace engine
          {
             return _krcbLobMetaPath ;
          }
+         OSS_INLINE const CHAR *getMaskingConfigPath() const
+         {
+            return _maskingConfigPath ;
+         }
          OSS_INLINE const CHAR *getDiagLogPath() const
          {
             return _krcbDiagLogPath;
@@ -979,6 +983,7 @@ namespace engine
          CHAR        _krcbConfPath[ OSS_MAX_PATHSIZE + 1 ] ;
          CHAR        _krcbConfFile[ OSS_MAX_PATHSIZE + 1 ] ;
          CHAR        _krcbCatFile[ OSS_MAX_PATHSIZE + 1 ] ;
+         CHAR        _maskingConfigPath[ OSS_MAX_PATHSIZE + 1 ] ;
          UINT16      _krcbSvcPort ;
          std::string _exePath ;
          UINT32      _invalidConfNum ;

@@ -544,6 +544,8 @@ namespace engine
       _monCtxCB.setContextID( contextID ) ;
 
       _isAffectGIndex      = FALSE ;
+      
+      _maskingEnabled      = FALSE ;
 
       _lastProcessTick     = pmdGetDBTick() ;
       _needTimeout         = TRUE ;
@@ -1097,6 +1099,18 @@ namespace engine
          {
             PD_LOG( PDERROR, "Failed to get objs from context buffer: %d", rc ) ;
             goto error ;
+         }
+         
+         if ( _maskingEnabled && !isCountMode() && buffObj._recordNum > 0 )
+         {
+            pmdMaskingProcessor processor ;
+            const CHAR* collection = getCollection() ;
+            const CHAR* user = getMaskingUser() ;
+            
+            if ( collection && *collection != '\0' )
+            {
+               processor.processBSONBuffer( collection, user, buffObj ) ;
+            }
          }
 
          if ( !isCountMode() )

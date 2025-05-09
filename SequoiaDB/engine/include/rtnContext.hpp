@@ -377,6 +377,31 @@ namespace engine
 
          BOOLEAN        isAffectGIndex() const { return _isAffectGIndex ; }
 
+         // Masking related methods
+         void enableMasking(const CHAR* user)
+         {
+            _maskingEnabled = TRUE ;
+            if (user)
+            {
+               _maskingUser = user ;
+            }
+         }
+
+         BOOLEAN isMaskingEnabled() const
+         {
+            return _maskingEnabled ;
+         }
+
+         const CHAR* getMaskingUser() const
+         {
+            return _maskingUser.c_str() ;
+         }
+         
+         virtual const CHAR* getCollection() const
+         {
+            return NULL ;
+         }
+
          const MsgGlobalID& getGlobalID() const { return _globalID ; }
 
       private:
@@ -643,6 +668,10 @@ namespace engine
          BOOLEAN                 _isTransCtx ;
 
          BOOLEAN                 _isAffectGIndex ;
+         
+         // masking related
+         BOOLEAN                 _maskingEnabled ;
+         std::string             _maskingUser ;
 
          // last tick after open, get-more or advance
          UINT64                  _lastProcessTick ;

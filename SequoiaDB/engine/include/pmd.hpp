@@ -58,6 +58,7 @@
 #include "pmdFTMgr.hpp"
 #include "pmdStartup.hpp"
 #include "monMgr.hpp"
+#include "pmdMaskingMgr.hpp"
 
 namespace engine
 {
@@ -243,6 +244,7 @@ namespace engine
 
       pmdLightJobMgr    *_pLightJobMgr ;
       pmdFTMgr          *_pFTMgr ;
+      _pmdMaskingMgr     _maskingMgr ;    /// Masking manager
       UINT32            _timeCounter ;    /// ms
       UINT32            _monTimeCounter ; /// ms
       UINT32            _logTimeCounter ; /// ms
@@ -358,6 +360,10 @@ namespace engine
       OSS_INLINE _spdFMPMgr *getFMPCB()
       {
          return ( _spdFMPMgr* )getOrgPointByType( SDB_CB_FMP ) ;
+      }
+      OSS_INLINE _pmdMaskingMgr *getMaskingMgr()
+      {
+         return &_maskingMgr ;
       }
 
       BOOLEAN isBusinessOK() const

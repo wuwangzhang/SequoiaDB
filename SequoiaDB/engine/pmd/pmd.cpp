@@ -393,6 +393,24 @@ namespace engine
          PD_LOG( PDERROR, "Init service task manager failed, rc: %d", rc ) ;
          goto error ;
       }
+      
+      {
+         const CHAR* maskingConfigFile = _optioncb.getMaskingConfigPath() ;
+         if ( maskingConfigFile && *maskingConfigFile != '\0' )
+         {
+            rc = _maskingMgr.init( maskingConfigFile ) ;
+            if ( rc )
+            {
+               PD_LOG( PDWARNING, "Init masking manager failed, rc: %d", rc ) ;
+               rc = SDB_OK ;
+            }
+            else
+            {
+               PD_LOG( PDEVENT, "Masking manager initialized with config: %s",
+                      maskingConfigFile ) ;
+            }
+         }
+      }
 
       rc = _eduMgr.init( this ) ;
       if ( rc )

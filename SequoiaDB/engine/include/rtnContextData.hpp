@@ -229,6 +229,12 @@ namespace engine
             return _planRuntime.getCLFullName() ?
                    _planRuntime.getCLFullName() : "" ;
          }
+         
+         virtual const CHAR* getCollection() const
+         {
+            return _planRuntime.getCLFullName() ?
+                   _planRuntime.getCLFullName() : "" ;
+         }
 
          virtual UINT32 getSULogicalID() const
          {

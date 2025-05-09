@@ -2083,6 +2083,7 @@ done:
       ossMemset( _krcbConfPath, 0, sizeof( _krcbConfPath ) ) ;
       ossMemset( _krcbConfFile, 0, sizeof( _krcbConfFile ) ) ;
       ossMemset( _krcbCatFile, 0, sizeof( _krcbCatFile ) ) ;
+      ossMemset( _maskingConfigPath, 0, sizeof( _maskingConfigPath ) ) ;
       _krcbSvcPort    = OSS_DFT_SVCPORT ;
       _invalidConfNum = 0 ;
    }
@@ -2128,6 +2129,9 @@ done:
       // --lobmetapath
       rdxPath( pEX, PMD_OPTION_LOBMETAPATH, _krcbLobMetaPath, sizeof(_krcbLobMetaPath),
                FALSE, PMD_CFG_CHANGE_FORBIDDEN, "" ) ;
+               
+      rdxPath( pEX, PMD_OPTION_MASKINGCONFIG, _maskingConfigPath, 
+               sizeof(_maskingConfigPath), FALSE, PMD_CFG_CHANGE_FORBIDDEN, "" ) ;
 
       // --maxpool
       rdxUInt( pEX, PMD_OPTION_MAXPOOL, _krcbMaxPool, FALSE, PMD_CFG_CHANGE_RUN,
@@ -3092,6 +3096,18 @@ done:
       if ( 0 == _krcbLobMetaPath[0] )
       {
          ossStrcpy( _krcbLobMetaPath, _krcbLobPath ) ;
+      }
+      
+      if ( 0 == _maskingConfigPath[0] )
+      {
+         if ( SDB_OK != utilBuildFullPath( _krcbConfPath, PMD_OPTION_MASKINGCONFIG,
+                                           OSS_MAX_PATHSIZE, _maskingConfigPath ) ||
+              SDB_OK != utilCatPath( _maskingConfigPath, OSS_MAX_PATHSIZE, ".conf" ) )
+         {
+            std::cerr << "masking config path is too long!" << endl ;
+            rc = SDB_INVALIDPATH ;
+            goto error ;
+         }
       }
 
       if ( 0 == _dmsTmpBlkPath[0] )
