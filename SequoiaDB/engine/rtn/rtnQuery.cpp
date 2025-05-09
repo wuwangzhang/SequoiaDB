@@ -803,6 +803,13 @@ retry:
          // open context
          rc = dataContext->open( su, mbContext, cb, options, pBlockObj,
                                  direction ) ;
+         
+         if ( SDB_OK == rc && pmdGetKRCB()->getMaskingMgr() && 
+              pmdGetKRCB()->getMaskingMgr()->isInitialized() )
+         {
+            dataContext->enableMasking( cb->getUserName() ) ;
+         }
+         
          if ( SDB_IXM_NOTEXIST == rc && scannerRetryTime < 1 )
          {
             // Maybe in the process of scanning the index,
