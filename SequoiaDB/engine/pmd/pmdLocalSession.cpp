@@ -43,6 +43,8 @@
 #include "msgConvertorImpl.hpp"
 #include "../bson/lib/md5.hpp"
 #include "auth.hpp"
+#include "pmdMaskingMgr.hpp"
+#include "../bson/bson.h"
 
 using namespace bson ;
 
@@ -996,24 +998,55 @@ namespace engine
                                    INT32 bodyLen )
    {
       INT32 rc = SDB_OK ;
+      
+      CHAR *pMaskedBody = NULL ;
+      INT32 maskedBodyLen = 0 ;
+      
+      rc = _processMasking( responseMsg, pBody, bodyLen, 
+                           pMaskedBody, maskedBodyLen ) ;
+      if ( rc )
+      {
+         PD_LOG( PDWARNING, "Session[%s] failed to process masking, rc: %d",
+                sessionName(), rc ) ;
+         pMaskedBody = NULL ;
+         maskedBodyLen = 0 ;
+         rc = SDB_OK ;
+      }
+      
+      const CHAR *pDataToSend = pMaskedBody ? pMaskedBody : pBody ;
+      INT32 dataLenToSend = pMaskedBody ? maskedBodyLen : bodyLen ;
+      
+      if ( pMaskedBody )
+      {
+         responseMsg->header.messageLength = sizeof( *responseMsg ) + maskedBodyLen ;
+      }
 
       if ( _inMsgConvertor )
       {
-         rc = _replyInCompatibleMode( responseMsg, pBody, bodyLen ) ;
+         rc = _replyInCompatibleMode( responseMsg, pDataToSend, dataLenToSend ) ;
          PD_RC_CHECK( rc, PDERROR, "Send reply message in compatible mode "
                       "failed[%d]. Message: %s", rc,
                       msg2String( &(responseMsg->header) ).c_str() ) ;
       }
       else
       {
-         rc = _replyInNormalMode( responseMsg, pBody, bodyLen ) ;
+         rc = _replyInNormalMode( responseMsg, pDataToSend, dataLenToSend ) ;
          PD_RC_CHECK( rc, PDERROR, "Send reply message failed[%d]. Message: %s",
                       rc, msg2String( &(responseMsg->header) ).c_str() ) ;
+      }
+      
+      if ( pMaskedBody )
+      {
+         SDB_OSS_FREE( pMaskedBody ) ;
       }
 
    done:
       return rc ;
    error:
+      if ( pMaskedBody )
+      {
+         SDB_OSS_FREE( pMaskedBody ) ;
+      }
       goto done ;
    }
 
@@ -1123,4 +1156,144 @@ namespace engine
       goto done ;
    }
 
-}
+   INT32 _pmdLocalSession::_processMasking( MsgOpReply *responseMsg, 
+                                           const CHAR *pBody,
+                                           INT32 bodyLen,
+                                           CHAR *&pMaskedBody,
+                                           INT32 &maskedBodyLen )
+   {
+      INT32 rc = SDB_OK ;
+      pMaskedBody = NULL ;
+      maskedBodyLen = 0 ;
+      
+      _pmdMaskingMgr *pMaskingMgr = pmdGetKRCB()->getMaskingMgr() ;
+      if ( !pMaskingMgr || !pMaskingMgr->isInitialized() || 
+           !pBody || bodyLen <= 0 || responseMsg->numReturned <= 0 )
+      {
+         goto done ;
+      }
+      
+      if ( !IS_REPLY_TYPE(responseMsg->header.opCode) )
+      {
+         goto done ;
+      }
+      
+      try
+      {
+         const CHAR *pCollectionName = NULL ;
+         if ( responseMsg->contextID != -1 )
+         {
+            rtnContext *pContext = pmdGetKRCB()->getRTNCB()->contextFind( responseMsg->contextID ) ;
+            if ( pContext )
+            {
+               pCollectionName = pContext->getCollection() ;
+            }
+         }
+         
+         if ( !pCollectionName || '\0' == *pCollectionName )
+         {
+            goto done ;
+         }
+         
+         const CHAR *pUserName = eduCB()->getUserName() ;
+         if ( !pUserName || '\0' == *pUserName )
+         {
+            goto done ;
+         }
+         
+         if ( !pMaskingMgr->needMasking( pCollectionName, pUserName ) )
+         {
+            goto done ;
+         }
+         
+         pMaskedBody = (CHAR*)SDB_OSS_MALLOC( bodyLen ) ;
+         if ( !pMaskedBody )
+         {
+            PD_LOG( PDERROR, "Failed to allocate memory for masked data" ) ;
+            rc = SDB_OOM ;
+            goto error ;
+         }
+         
+         INT32 processedSize = 0 ;
+         INT32 outputSize = 0 ;
+         const CHAR *pCurrent = pBody ;
+         CHAR *pMaskedCurrent = pMaskedBody ;
+         
+         for ( INT32 i = 0; i < responseMsg->numReturned; i++ )
+         {
+            try
+            {
+               bson::BSONObj obj( pCurrent ) ;
+               INT32 objSize = obj.objsize() ;
+               
+               bson::BSONObj maskedObj ;
+               rc = pMaskingMgr->processBSON( pCollectionName, pUserName, 
+                                             obj, maskedObj ) ;
+               if ( rc )
+               {
+                  PD_LOG( PDWARNING, "Failed to mask BSON object, rc: %d", rc ) ;
+                  maskedObj = obj.copy() ;
+                  rc = SDB_OK ;
+               }
+               
+               INT32 maskedObjSize = maskedObj.objsize() ;
+               if ( outputSize + maskedObjSize > bodyLen )
+               {
+                  INT32 newSize = bodyLen * 2 ;
+                  while ( outputSize + maskedObjSize > newSize )
+                  {
+                     newSize *= 2 ;
+                  }
+                  
+                  CHAR *pNewBuffer = (CHAR*)SDB_OSS_REALLOC( pMaskedBody, newSize ) ;
+                  if ( !pNewBuffer )
+                  {
+                     PD_LOG( PDERROR, "Failed to reallocate memory for masked data" ) ;
+                     rc = SDB_OOM ;
+                     goto error ;
+                  }
+                  
+                  pMaskedBody = pNewBuffer ;
+                  pMaskedCurrent = pMaskedBody + outputSize ;
+               }
+               
+               ossMemcpy( pMaskedCurrent, maskedObj.objdata(), maskedObjSize ) ;
+               pMaskedCurrent += maskedObjSize ;
+               outputSize += maskedObjSize ;
+               
+               pCurrent += ossAlign4( (UINT32)objSize ) ;
+               processedSize += ossAlign4( (UINT32)objSize ) ;
+               
+               if ( processedSize >= bodyLen )
+               {
+                  break ;
+               }
+            }
+            catch ( std::exception &e )
+            {
+               PD_LOG( PDERROR, "Exception during masking: %s", e.what() ) ;
+               rc = SDB_SYS ;
+               goto error ;
+            }
+         }
+         
+         maskedBodyLen = outputSize ;
+      }
+      catch ( std::exception &e )
+      {
+         PD_LOG( PDERROR, "Exception during masking: %s", e.what() ) ;
+         rc = SDB_SYS ;
+         goto error ;
+      }
+      
+   done:
+      return rc ;
+   error:
+      if ( pMaskedBody )
+      {
+         SDB_OSS_FREE( pMaskedBody ) ;
+         pMaskedBody = NULL ;
+      }
+      maskedBodyLen = 0 ;
+      goto done ;
+   }

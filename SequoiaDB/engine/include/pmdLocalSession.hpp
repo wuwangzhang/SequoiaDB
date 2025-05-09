@@ -39,6 +39,7 @@
 #include "rtnContext.hpp"
 #include "../bson/bson.h"
 #include "msgConvertor.hpp"
+#include "pmdMaskingMgr.hpp"
 
 using namespace bson ;
 
@@ -101,6 +102,12 @@ namespace engine
          INT32          _replyInNormalMode( MsgOpReply *responseMsg,
                                             const CHAR *data,
                                             INT32 dataLen ) ;
+                                            
+         INT32          _processMasking( MsgOpReply *responseMsg, 
+                                         const CHAR *pBody,
+                                         INT32 bodyLen,
+                                         CHAR *&pMaskedBody,
+                                         INT32 &maskedBodyLen ) ;
 
       protected:
          virtual void            _onAttach () ;
